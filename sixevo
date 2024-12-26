@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# Check if the script is run as root (for Docker installation)
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root or with sudo."
+  exit 1
+fi
+
+# Banner
+echo -e "\033[1;34m"
+cat << "EOF"
+  _____       _               
+ | ____|                
+ | |                   
+ |  |           _____ |   ____ __   __  _ __   
+ | |___  \   /  |   | |   |  |  \   /  |_ |_|  
+ |_____|  \_/   |___| |__ |__|   \_/   |_ |  \
+EOF
+echo -e "\033[0m"
+echo "Welcome to EVO VPS Automation Script"
+echo "====================================="
+
+# Function to install Docker if not present
+install_docker() {
+  echo "Installing Docker..."
+  sudo apt update && sudo apt install -y docker.io docker-compose
+  echo "Docker installed successfully."
+}
+
+# Function to create .env file and open it with nano
+create_env_file() {
+  echo "Creating .env file..."
+  cat > .env <<EOF
+VANA_PRIVATE_KEY=abcdefabcef
+VANA_NETWORK=mainnet
+OLLAMA_API_URL=http://ollama:11434/api
+EOF
+  echo ".env file created. Opening .env file in nano for editing."
+  nano .env  # Open the .env file in nano editor
+  echo "You have successfully saved the .env file. Returning to the main menu..."
+}
+
+# Function to clone the miner repository
+clone_repository() {
+  echo "Cloning repository..."
+  git clone https://github.com/sixgpt/miner.git
+  cd miner || { echo "Failed to navigate to miner directory."; exit 1; }
+  echo "Repository cloned and navigated to 'miner' directory."
+}
+
+# Function to run miner with Docker
+run_miner() {
+  echo "Running miner..."
+  docker-compose up -d
+  echo "Miner is now running in the background."
+}
+
+# Function to stop the miner and containers
+stop_miner() {
+  echo "Stopping miner and containers..."
+  docker-compose down
+  echo "Miner and containers have been stopped."
+}
+
+# Function to view Docker logs
+view_logs() {
+  echo "Viewing Docker logs..."
+  docker-compose logs -f
+}
+
+# Main menu loop
+while true; do
+  echo "\nOptions:"
+  echo "1. Install Docker"
+  echo "2. Clone Repository and Navigate"
+  echo "3. Create .env File"
+  echo "4. Run Miner"
+  echo "5. Stop Miner"
+  echo "6. Check Logs"
+  echo "7. Exit"
+  read -p "Choose an option [1-7]: " choice
+
+  case $choice in
+    1)
+      install_docker
+      ;;
+    2)
+      clone_repository
+      ;;
+    3)
+      create_env_file
+      ;;
+    4)
+      run_miner
+      ;;
+    5)
+      stop_miner
+      ;;
+    6)
+      view_logs
+      ;;
+    7)
+      echo "Exiting script. Goodbye!"
+      exit 0
+      ;;
+    *)
+      echo "Invalid option. Please try again."
+      ;;
+  esac
+done
